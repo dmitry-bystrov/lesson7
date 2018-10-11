@@ -1,11 +1,14 @@
 package ru.geekbrains.android3_7;
 
+import android.util.Log;
+
 import org.junit.AfterClass;
 import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.Test;
 
 import java.io.IOException;
+import java.util.List;
 
 import javax.inject.Inject;
 
@@ -17,6 +20,7 @@ import ru.geekbrains.android3_7.di.TestComponent;
 import ru.geekbrains.android3_7.mvp.di.modules.ApiModule;
 import ru.geekbrains.android3_7.mvp.model.api.IUserRepo;
 import ru.geekbrains.android3_7.mvp.model.entity.User;
+import ru.geekbrains.android3_7.mvp.model.entity.UserRepository;
 
 import static  org.junit.Assert.assertEquals;
 
@@ -63,7 +67,6 @@ public class UserRepoInstrumentedTest {
         observer.assertValueCount(1);
         assertEquals(observer.values().get(0).getLogin(), "someuser");
         assertEquals(observer.values().get(0).getAvatarUrl(), "someurl");
-
     }
 
     private MockResponse createUserResponse(String login, String avatarUrl){
@@ -72,4 +75,23 @@ public class UserRepoInstrumentedTest {
                 .setBody(body);
     }
 
+    @Test
+    public void getUserRepos(){
+        mockWebServer.enqueue(createRepoResponse("some_id", "some_name"));
+        TestObserver<List<UserRepository>> observer = new TestObserver<>();
+        usersRepo.getUserRepos(new User("some_user", "some_avatar_url"))
+                .subscribe(observer);
+
+        observer.awaitTerminalEvent();
+
+        observer.assertValueCount(1);
+        assertEquals(observer.values().get(0).get(0).getId(), "some_id");
+        assertEquals(observer.values().get(0).get(0).getName(), "some_name");
+    }
+
+    private MockResponse createRepoResponse(String id, String name){
+        String body = "[{\"id\": \"" + id + "\", \"name\": \"" + name + "\"}]";
+        return new MockResponse()
+                .setBody(body);
+    }
 }
